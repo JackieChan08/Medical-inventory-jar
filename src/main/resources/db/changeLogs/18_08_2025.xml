@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Таблица для файлов -->
+    <changeSet id="1-create-files" author="jeki">
+        <createTable tableName="files">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="original_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unique_name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="file_type" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_path" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="upload_time" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- Таблица для инструментов -->
+    <changeSet id="2-create-instruments" author="jeki">
+        <createTable tableName="instruments">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="barcode" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="serial_number" type="VARCHAR(255)"/>
+            <column name="production_date" type="DATE"/>
+            <column name="acceptance_date" type="DATE"/>
+            <column name="production_company" type="VARCHAR(255)"/>
+            <column name="country" type="VARCHAR(255)"/>
+            <column name="composition" type="VARCHAR(500)"/>
+            <column name="reusable" type="BOOLEAN"/>
+            <column name="usage_count" type="INT"/>
+            <column name="status" type="VARCHAR(50)"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Таблица для коробок -->
+    <changeSet id="3-create-boxes" author="jeki">
+        <createTable tableName="boxes">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="barcode" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="doctor_name" type="VARCHAR(255)"/>
+            <column name="status" type="VARCHAR(50)"/>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="return_by" type="DATE"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Промежуточная таблица для box-instruments -->
+    <changeSet id="4-create-box-instruments" author="jeki">
+        <createTable tableName="box_instruments">
+            <column name="box_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="instrument_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="box_instruments" columnNames="box_id, instrument_id"
+                       constraintName="pk_box_instruments"/>
+
+        <addForeignKeyConstraint baseTableName="box_instruments" baseColumnNames="box_id"
+                                 constraintName="fk_box_instruments_box"
+                                 referencedTableName="boxes" referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="box_instruments" baseColumnNames="instrument_id"
+                                 constraintName="fk_box_instruments_instrument"
+                                 referencedTableName="instruments" referencedColumnNames="id"/>
+    </changeSet>
+
+    <!-- История действий -->
+    <changeSet id="5-create-instrument-box-history" author="jeki">
+        <createTable tableName="instrument_box_history">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="box_id" type="UUID"/>
+            <column name="instrument_id" type="UUID"/>
+            <column name="operation" type="VARCHAR(50)"/>
+            <column name="doctor_name" type="VARCHAR(255)"/>
+            <column name="timestamp" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="instrument_box_history" baseColumnNames="box_id"
+                                 constraintName="fk_history_box"
+                                 referencedTableName="boxes" referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="instrument_box_history" baseColumnNames="instrument_id"
+                                 constraintName="fk_history_instrument"
+                                 referencedTableName="instruments" referencedColumnNames="id"/>
+    </changeSet>
+
+    <!-- Таблица для картинок инструментов -->
+    <changeSet id="6-create-instrument-images" author="jeki">
+        <createTable tableName="instrument_images">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="instrument_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="image_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="instrument_images" baseColumnNames="instrument_id"
+                                 constraintName="fk_images_instrument"
+                                 referencedTableName="instruments" referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="instrument_images" baseColumnNames="image_id"
+                                 constraintName="fk_images_file"
+                                 referencedTableName="files" referencedColumnNames="id"/>
+    </changeSet>
+
+</databaseChangeLog>
