@@ -1,6 +1,7 @@
 package com.example.medicalinventory.service;
 
 import com.example.medicalinventory.DTO.BoxRequest;
+import com.example.medicalinventory.DTO.BoxStatusRequest;
 import com.example.medicalinventory.DTO.ReturnRequest;
 import com.example.medicalinventory.model.*;
 import com.example.medicalinventory.repository.BoxImageRepository;
@@ -12,6 +13,7 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.oned.Code128Writer;
 import com.google.zxing.oned.Code39Writer;
+import com.itextpdf.io.font.FontProgramFactory;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
@@ -31,9 +33,11 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -81,11 +85,14 @@ public class BoxService {
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf);
 
-        String fontPath = "src/main/resources/fonts/FreeSans.ttf";
-        PdfFont font = PdfFontFactory.createFont(fontPath, PdfEncodings.IDENTITY_H);
+        InputStream fontStream = getClass().getResourceAsStream("/fonts/FreeSans.ttf");
+        byte[] fontBytes = fontStream.readAllBytes();
+        PdfFont font = PdfFontFactory.createFont(
+                FontProgramFactory.createFont(fontBytes),
+                PdfEncodings.IDENTITY_H,
+                PdfFontFactory.EmbeddingStrategy.FORCE_EMBEDDED
+        );
         document.setFont(font);
-
-        // Заголовки
         document.add(new Paragraph("Бокс: " + box.getName()));
         if (box.getDoctorName() != null) {
             document.add(new Paragraph("Доктор: " + box.getDoctorName()));
@@ -97,13 +104,13 @@ public class BoxService {
             document.add(new Paragraph("Вернуть до: " + box.getReturnBy()));
         }
 
-        // Штрих-код
         Image barcodeImage = new Image(generateBarcodeImage(box.getBarcode()));
         document.add(barcodeImage);
 
         document.close();
         return baos.toByteArray();
     }
+
 
 
     private ImageData generateBarcodeImage(String code) throws WriterException {
@@ -131,6 +138,67 @@ public class BoxService {
         }
         return sb.toString();
     }
+
+    @Transactional
+    public Box updateBoxStatus(BoxStatusRequest boxStatusRequest) throws Exception {
+        Box box = boxRepository.findByBarcode(boxStatusRequest.getBarcode())
+                .orElseThrow(() -> new RuntimeException("Box not found"));
+
+        final BoxStatus newStatus = boxStatusRequest.getBoxStatus();
+
+        if (newStatus != BoxStatus.ISSUED) {
+            if (box.getStatus() == null || box.getStatus() == BoxStatus.CREATED) {
+                throw new IllegalStateException("Box cannot be updated from CREATED or null to " + newStatus);
+            }
+        }
+
+        box.setStatus(newStatus);
+        boxRepository.save(box);
+
+        if (boxStatusRequest.getInstrumentBarcodes() != null) {
+            for (String instrumentBarcode : boxStatusRequest.getInstrumentBarcodes()) {
+                instrumentRepository.findByBarcode(instrumentBarcode)
+                        .ifPresentOrElse(instrument -> {
+                            if (newStatus == BoxStatus.ISSUED) {
+                                instrument.setStatus(InstrumentStatus.IN_USE);
+                                instrumentRepository.save(instrument);
+                                instrumentBoxHistoryService.logOperation(
+                                        box,
+                                        instrument,
+                                        HistoryOperation.ISSUED,
+                                        box.getDoctorName()
+                                );
+                            } else if (newStatus == BoxStatus.RETURNED) {
+                                instrument.setStatus(InstrumentStatus.ACTIVE);
+                                instrumentRepository.save(instrument);
+                                instrumentBoxHistoryService.logOperation(
+                                        box,
+                                        instrument,
+                                        HistoryOperation.RETURNED,
+                                        box.getDoctorName()
+                                );
+                            }
+                        }, () -> {
+                            instrumentBoxHistoryService.logOperation(
+                                    box,
+                                    null,
+                                    HistoryOperation.LOST,
+                                    box.getDoctorName()
+                            );
+                        });
+            }
+        }
+
+        if (newStatus == BoxStatus.ISSUED) {
+            instrumentBoxHistoryService.logOperation(box, null, HistoryOperation.ISSUED);
+        } else if (newStatus == BoxStatus.RETURNED) {
+            instrumentBoxHistoryService.logOperation(box, null, HistoryOperation.RETURNED);
+        }
+
+        return box;
+    }
+
+
 
 
     @Transactional
@@ -196,5 +264,7 @@ public class BoxService {
         return boxRepository.findByReturnByBetween(startDate, endDate, pageable);
     };
 
-
+    public Optional<Box> findByBarcode(String barcode) {
+        return boxRepository.findByBarcode(barcode);
+    }
 }

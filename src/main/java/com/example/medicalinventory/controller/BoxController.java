@@ -2,6 +2,7 @@ package com.example.medicalinventory.controller;
 
 import com.example.medicalinventory.DTO.BoxRequest;
 import com.example.medicalinventory.DTO.BoxResponse;
+import com.example.medicalinventory.DTO.BoxStatusRequest;
 import com.example.medicalinventory.DTO.ReturnRequest;
 import com.example.medicalinventory.model.Box;
 import com.example.medicalinventory.model.BoxStatus;
@@ -44,6 +45,12 @@ public class BoxController {
         return ResponseEntity.ok("Box and instruments processed as returned/lost");
     }
 
+    @PostMapping("/update-status")
+    public ResponseEntity<Box> updateStatus(@RequestBody BoxStatusRequest request) throws Exception {
+        Box updatedBox = boxService.updateBoxStatus(request);
+        return ResponseEntity.ok(updatedBox);
+    }
+
     @GetMapping("/get-by-status")
     public ResponseEntity<Page<BoxResponse>> getBoxByStatus(@RequestParam BoxStatus status,
                                                             @RequestParam int page,
@@ -65,6 +72,11 @@ public class BoxController {
         Page<Box> boxes = boxService.getBoxesByReturnDateRange(startDate, endDate, pageable);
 
         return ResponseEntity.ok(boxes.map(boxConverterService::convertToBoxResponse));
+    }
+
+    @GetMapping("/{barcode}")
+    public ResponseEntity<BoxResponse> getBox(@PathVariable String barcode) throws Exception {
+        return ResponseEntity.ok(boxConverterService.convertToBoxResponse(boxService.findByBarcode(barcode).get()));
     }
 
 
