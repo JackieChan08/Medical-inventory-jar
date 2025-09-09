@@ -168,6 +168,7 @@ public class BoxService {
                                         HistoryOperation.ISSUED,
                                         box.getDoctorName()
                                 );
+                                box.setIssuedBy(LocalDate.now());
                             } else if (newStatus == BoxStatus.RETURNED) {
                                 instrument.setStatus(InstrumentStatus.ACTIVE);
                                 instrumentRepository.save(instrument);

@@ -37,7 +37,8 @@ public class Box {
     @Column(name = "return_by")
     private LocalDate returnBy;
 
-
+    @Column(name = "issued_by")
+    private LocalDate issuedBy;
 
     @ManyToMany
     @JoinTable(

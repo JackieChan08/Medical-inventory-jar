@@ -17,6 +17,7 @@ public class BoxResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDate return_by;
+    private LocalDate issued_by;
 
     private List<InstrumentResponse> instruments;
 }

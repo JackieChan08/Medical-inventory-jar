@@ -32,9 +32,8 @@ public class BoxConverterService {
         response.setUpdatedAt(box.getUpdatedAt());
         response.setName(box.getName());
         response.setReturn_by(box.getReturnBy());
+        response.setIssued_by(box.getIssuedBy());
 
-
-        // инструменты
         if (box.getInstruments() != null && !box.getInstruments().isEmpty()) {
             List<InstrumentResponse> instruments = box.getInstruments().stream()
                     .map(instrumentConverterService::convertToInstrumentResponse)

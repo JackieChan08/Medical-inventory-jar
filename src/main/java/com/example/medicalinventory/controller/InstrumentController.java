@@ -35,7 +35,6 @@ public class InstrumentController {
                 .body(zip);
     }
 
-
     @GetMapping("/{barcode}")
     public ResponseEntity<InstrumentResponse> getInstrumentResponseByBarcode(@PathVariable String barcode) {
         Instrument instrument = instrumentService.getByBarcode(barcode);
@@ -44,7 +43,6 @@ public class InstrumentController {
         }
         return ResponseEntity.ok(converterService.convertToInstrumentResponse(instrument));
     }
-
 
     @PostMapping("/return")
     public ResponseEntity<String> returnInstruments(@RequestParam List<String> instrumentBarcodes) {

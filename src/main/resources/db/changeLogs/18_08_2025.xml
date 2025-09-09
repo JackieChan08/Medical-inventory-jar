@@ -64,6 +64,7 @@
             <column name="status" type="VARCHAR(50)"/>
             <column name="name" type="VARCHAR(255)"/>
             <column name="return_by" type="DATE"/>
+            <column name="issued_by" type="DATE"/>
             <column name="created_at" type="TIMESTAMP"/>
             <column name="updated_at" type="TIMESTAMP"/>
         </createTable>
