@@ -30,6 +30,10 @@ public class InstrumentBoxHistory {
 
     private LocalDateTime timestamp;
 
-    private String doctorName;
+    @Column(name = "nurse_name")
+    private String nurseName;
+
+    private String department;
+
 }
 

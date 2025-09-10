@@ -9,7 +9,8 @@ import java.util.List;
 public class BoxRequest {
     private String name;
     private LocalDate returnDate;
-    private String doctorName;
+    private String nurseName;
+    private String department;
     private List<String> instrumentBarcodes;
 }
 

@@ -13,13 +13,14 @@ public class InstrumentBoxHistoryService {
 
     private final InstrumentBoxHistoryRepository historyRepository;
 
-    public void logOperation(Box box, Instrument instrument, HistoryOperation operation, String doctorName) {
+    public void logOperation(Box box, Instrument instrument, HistoryOperation operation, String nurseName, String department) {
         InstrumentBoxHistory history = InstrumentBoxHistory.builder()
                 .box(box)
                 .instrument(instrument)
                 .operation(operation)
                 .timestamp(LocalDateTime.now())
-                .doctorName(doctorName)
+                .nurseName(nurseName)
+                .department(department)
                 .build();
         historyRepository.save(history);
     }

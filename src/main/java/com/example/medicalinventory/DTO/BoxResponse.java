@@ -11,7 +11,8 @@ import java.util.UUID;
 public class BoxResponse {
     private UUID id;
     private String barcode;
-    private String doctorName;
+    private String nurseName;
+    private String department;
     private String name;
     private String status;
     private LocalDateTime createdAt;

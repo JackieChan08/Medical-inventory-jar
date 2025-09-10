@@ -54,7 +54,8 @@ public class BoxService {
         Box box = new Box();
         box.setBarcode(generateBarcode());
         box.setName(request.getName());
-        box.setDoctorName(request.getDoctorName());
+        box.setNurseName(request.getNurseName());
+        box.setDepartment(request.getDepartment());
         box.setStatus(BoxStatus.CREATED);
         box.setInstruments(new ArrayList<>());
         box.setCreatedAt(LocalDateTime.now());
@@ -93,9 +94,12 @@ public class BoxService {
                 PdfFontFactory.EmbeddingStrategy.FORCE_EMBEDDED
         );
         document.setFont(font);
-        document.add(new Paragraph("Бокс: " + box.getName()));
-        if (box.getDoctorName() != null) {
-            document.add(new Paragraph("Доктор: " + box.getDoctorName()));
+        document.add(new Paragraph("Бикс: " + box.getName()));
+        if (box.getNurseName() != null) {
+            document.add(new Paragraph("Отвественная медсестра: " + box.getNurseName()));
+        }
+        if (box.getDepartment() != null) {
+            document.add(new Paragraph("Отделение: " + box.getDepartment()));
         }
         if (box.getCreatedAt() != null) {
             document.add(new Paragraph("Создан: " + box.getCreatedAt().toLocalDate()));
@@ -141,7 +145,7 @@ public class BoxService {
 
     @Transactional
     public Box updateBoxStatus(BoxStatusRequest boxStatusRequest) throws Exception {
-        Box box = boxRepository.findByBarcode(boxStatusRequest.getBarcode())
+        final Box box = boxRepository.findByBarcode(boxStatusRequest.getBarcode())
                 .orElseThrow(() -> new RuntimeException("Box not found"));
 
         final BoxStatus newStatus = boxStatusRequest.getBoxStatus();
@@ -166,9 +170,10 @@ public class BoxService {
                                         box,
                                         instrument,
                                         HistoryOperation.ISSUED,
-                                        box.getDoctorName()
+                                        box.getNurseName(),
+                                        box.getDepartment()
                                 );
-                                box.setIssuedBy(LocalDate.now());
+
                             } else if (newStatus == BoxStatus.RETURNED) {
                                 instrument.setStatus(InstrumentStatus.ACTIVE);
                                 instrumentRepository.save(instrument);
@@ -176,7 +181,8 @@ public class BoxService {
                                         box,
                                         instrument,
                                         HistoryOperation.RETURNED,
-                                        box.getDoctorName()
+                                        box.getNurseName(),
+                                        box.getDepartment()
                                 );
                             }
                         }, () -> {
@@ -184,7 +190,8 @@ public class BoxService {
                                     box,
                                     null,
                                     HistoryOperation.LOST,
-                                    box.getDoctorName()
+                                    box.getNurseName(),
+                                    box.getDepartment()
                             );
                         });
             }
@@ -192,6 +199,8 @@ public class BoxService {
 
         if (newStatus == BoxStatus.ISSUED) {
             instrumentBoxHistoryService.logOperation(box, null, HistoryOperation.ISSUED);
+            box.setIssuedBy(LocalDate.now());
+            boxRepository.save(box);
         } else if (newStatus == BoxStatus.RETURNED) {
             instrumentBoxHistoryService.logOperation(box, null, HistoryOperation.RETURNED);
         }

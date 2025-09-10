@@ -26,7 +26,9 @@ public class Box {
     @Column(unique = true, nullable = false)
     private String barcode;
 
-    private String doctorName;
+    @Column(name = "nurse_name")
+    private String nurseName;
+    private String department;
 
     @Enumerated(EnumType.STRING)
     private BoxStatus status;

@@ -26,7 +26,8 @@ public class BoxConverterService {
 
         response.setId(box.getId());
         response.setBarcode(box.getBarcode());
-        response.setDoctorName(box.getDoctorName());
+        response.setNurseName(box.getNurseName());
+        response.setDepartment(box.getDepartment());
         response.setStatus(box.getStatus() != null ? box.getStatus().name() : null);
         response.setCreatedAt(box.getCreatedAt());
         response.setUpdatedAt(box.getUpdatedAt());

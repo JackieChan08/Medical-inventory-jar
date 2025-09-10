@@ -60,7 +60,8 @@
             <column name="barcode" type="VARCHAR(255)">
                 <constraints nullable="false" unique="true"/>
             </column>
-            <column name="doctor_name" type="VARCHAR(255)"/>
+            <column name="nurse_name" type="VARCHAR(255)"/>
+            <column name="department" type="VARCHAR(255)"/>
             <column name="status" type="VARCHAR(50)"/>
             <column name="name" type="VARCHAR(255)"/>
             <column name="return_by" type="DATE"/>
@@ -102,7 +103,8 @@
             <column name="box_id" type="UUID"/>
             <column name="instrument_id" type="UUID"/>
             <column name="operation" type="VARCHAR(50)"/>
-            <column name="doctor_name" type="VARCHAR(255)"/>
+            <column name="nurse_name" type="VARCHAR(255)"/>
+            <column name="department" type="VARCHAR(255)"/>
             <column name="timestamp" type="TIMESTAMP"/>
         </createTable>
 
