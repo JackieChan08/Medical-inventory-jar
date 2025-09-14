@@ -205,7 +205,6 @@ public class InstrumentService {
         switch (method) {
             case RETURNED:
                 instrument.setStatus(InstrumentStatus.ACTIVE);
-                historyService.logOperation(null, instrument, HistoryOperation.RETURNED);
                 break;
             case PAID:
                 if (request.getSum() == null || request.getSum().compareTo(BigDecimal.ZERO) <= 0) {
@@ -213,11 +212,9 @@ public class InstrumentService {
                 }
                 instrument.setStatus(InstrumentStatus.UNACTIVE);
                 paidAmount = request.getSum();
-                historyService.logOperation(null, instrument, HistoryOperation.LOST);
                 break;
             case REPLACED:
                 instrument.setStatus(InstrumentStatus.ACTIVE);
-                historyService.logOperation(null, instrument, HistoryOperation.RETURNED);
                 responseBytes = generateSingleSvg(instrument);
                 break;
             default:

@@ -68,11 +68,11 @@ public class InstrumentController {
     }
 
     @GetMapping("/get-by-status")
-    public ResponseEntity<Page<Instrument>> getInstrumentsByStatus(@RequestParam InstrumentStatus status,
+    public ResponseEntity<Page<InstrumentResponse>> getInstrumentsByStatus(@RequestParam InstrumentStatus status,
                                                                    @RequestParam int page,
                                                                    @RequestParam int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Instrument> instruments = instrumentService.getInstrumentsByStatus(status, pageable);
-        return ResponseEntity.ok(instruments);
+        return ResponseEntity.ok(instruments.map(converterService::convertToInstrumentResponse));
     }
 }

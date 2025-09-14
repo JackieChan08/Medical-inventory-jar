@@ -1,0 +1,357 @@
+{
+	"info": {
+		"_postman_id": "ef109f49-41be-4560-801d-57278284f78f",
+		"name": "Medical Inventory API",
+		"description": "Коллекция запросов для Medical Inventory",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "46611599",
+		"_collection_link": "https://www.postman.com/meta88-0265/workspace/myapibackprojectcollections-jackiechan/collection/46611599-ef109f49-41be-4560-801d-57278284f78f?action=share&source=collection_link&creator=46611599"
+	},
+	"item": [
+		{
+			"name": "Create Box PDF",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "name",
+							"value": "a",
+							"type": "text"
+						},
+						{
+							"key": "returnDate",
+							"value": "2024-01-01",
+							"type": "text"
+						},
+						{
+							"key": "nurseName",
+							"value": "вввв",
+							"type": "text"
+						},
+						{
+							"key": "department",
+							"value": "ввсывы",
+							"type": "text"
+						},
+						{
+							"key": "instrumentBarcodes",
+							"value": "JFO7GZ",
+							"type": "text"
+						},
+						{
+							"key": "instrumentBarcodes",
+							"value": "UGY590",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/boxes/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"boxes",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "returnBox",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"boxBarcode\": \"53QYNN\",\n  \"instrumentBarcodes\": [\"UGY590\"]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/boxes/return",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"boxes",
+						"return"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Instrument PDF",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "name",
+							"value": "Инструмент 1",
+							"type": "text"
+						},
+						{
+							"key": "productionDate",
+							"value": "2025-01-01",
+							"type": "text"
+						},
+						{
+							"key": "acceptanceDate",
+							"value": "2025-02-01",
+							"type": "text"
+						},
+						{
+							"key": "productionCompany",
+							"value": "MedCorp",
+							"type": "text"
+						},
+						{
+							"key": "country",
+							"value": "KG",
+							"type": "text"
+						},
+						{
+							"key": "composition",
+							"value": "Сталь",
+							"type": "text"
+						},
+						{
+							"key": "reusable",
+							"value": "true",
+							"type": "text"
+						},
+						{
+							"key": "usageCount",
+							"value": "0",
+							"type": "text"
+						},
+						{
+							"key": "quantity",
+							"value": "5",
+							"type": "text"
+						},
+						{
+							"key": "images",
+							"type": "file",
+							"src": "postman-cloud:///1f091718-9ff0-4950-a383-b74fb6713ef0"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/instruments/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"instruments",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Return Instruments",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"instrumentBarcodes\": [\"INST001\", \"INST002\"]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/instruments/return",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"instruments",
+						"return"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "by-status-box",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/boxes/get-by-status?status=LOST&page=0&size=10\n",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"boxes",
+						"get-by-status"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "LOST"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "10\n"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "by-return-date",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/boxes/by-return-date?startDate=2025-08-01&endDate=2025-08-31&page=0&size=10\n",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"boxes",
+						"by-return-date"
+					],
+					"query": [
+						{
+							"key": "startDate",
+							"value": "2025-08-01"
+						},
+						{
+							"key": "endDate",
+							"value": "2025-08-31"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "10\n"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "log-status",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"barcode\": \"5KUU5N\",\r\n  \"boxStatus\": \"ISSUED\",\r\n  \"instrumentBarcodes\": [\"QWE83H\"]\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/boxes/update-status",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"boxes",
+						"update-status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get-box-byBarcode",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "name",
+							"value": "a",
+							"type": "text"
+						},
+						{
+							"key": "returnDate",
+							"value": "2024-01-01",
+							"type": "text"
+						},
+						{
+							"key": "doctorName",
+							"value": "doctorName",
+							"type": "text"
+						},
+						{
+							"key": "instrumentBarcodes",
+							"value": "A971GU",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/boxes/WHB6VW",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"boxes",
+						"WHB6VW"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
