@@ -4,7 +4,6 @@ import com.example.medicalinventory.DTO.BoxResponse;
 import com.example.medicalinventory.DTO.FileResponse;
 import com.example.medicalinventory.DTO.InstrumentResponse;
 import com.example.medicalinventory.model.Box;
-import com.example.medicalinventory.model.BoxImage;
 import com.example.medicalinventory.model.FileEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

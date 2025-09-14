@@ -4,5 +4,6 @@ public enum InstrumentStatus {
     ACTIVE,
     LOST,
     IN_USE,
-    IN_BOX
+    IN_BOX,
+    UNACTIVE
 }

@@ -2,6 +2,7 @@ package com.example.medicalinventory.controller;
 
 import com.example.medicalinventory.DTO.InstrumentRequest;
 import com.example.medicalinventory.DTO.InstrumentResponse;
+import com.example.medicalinventory.DTO.InstrumentReturnRequest;
 import com.example.medicalinventory.model.Instrument;
 import com.example.medicalinventory.model.InstrumentStatus;
 import com.example.medicalinventory.service.InstrumentConverterService;
@@ -45,11 +46,18 @@ public class InstrumentController {
     }
 
     @PostMapping("/return")
-    public ResponseEntity<String> returnInstruments(@RequestParam List<String> instrumentBarcodes) {
-        instrumentService.returnInstruments(instrumentBarcodes);
-        return ResponseEntity.ok("Instruments processed as returned/lost");
-    }
+    public ResponseEntity<byte[]> returnInstrument(@RequestBody InstrumentReturnRequest request) throws Exception {
+        byte[] svgBytes = instrumentService.returnInstrument(request);
 
+        if (svgBytes != null) {
+            String filename = request.getBarcode() + ".svg";
+            return ResponseEntity.ok()
+                    .header("Content-Type", "image/svg+xml")
+                    .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                    .body(svgBytes);
+        }
+        return ResponseEntity.ok().build();
+    }
 
     @GetMapping
     public ResponseEntity<Page<InstrumentResponse>> getAllInstruments(@RequestParam int page,
@@ -58,6 +66,7 @@ public class InstrumentController {
         Page<Instrument> instruments = instrumentService.findAll(pageable);
         return ResponseEntity.ok(instruments.map(converterService::convertToInstrumentResponse));
     }
+
     @GetMapping("/get-by-status")
     public ResponseEntity<Page<Instrument>> getInstrumentsByStatus(@RequestParam InstrumentStatus status,
                                                                    @RequestParam int page,

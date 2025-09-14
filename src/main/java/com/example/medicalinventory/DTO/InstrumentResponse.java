@@ -2,6 +2,7 @@ package com.example.medicalinventory.DTO;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -21,5 +22,9 @@ public class InstrumentResponse {
     private Integer usageCount;
     private String status;
 
-    private List<FileResponse> images; // фото инструмента
+    private List<FileResponse> images;
+
+    private BigDecimal paidBy;
+    private String returnBy;
+    private LocalDate returnDate;
 }

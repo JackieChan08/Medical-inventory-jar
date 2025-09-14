@@ -1,10 +1,12 @@
 package com.example.medicalinventory.service;
 
 import com.example.medicalinventory.DTO.InstrumentRequest;
+import com.example.medicalinventory.DTO.InstrumentReturnRequest;
 import com.example.medicalinventory.model.*;
 import com.example.medicalinventory.repository.InstrumentBoxHistoryRepository;
 import com.example.medicalinventory.repository.InstrumentImageRepository;
 import com.example.medicalinventory.repository.InstrumentRepository;
+import com.example.medicalinventory.repository.InstrumentReturnRepository;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
@@ -17,8 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.*;
+
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -28,10 +33,10 @@ public class InstrumentService {
 
     private final InstrumentRepository instrumentRepository;
     private final InstrumentImageRepository instrumentImageRepository;
+    private final InstrumentReturnRepository instrumentReturnRepository;
     private final FileUploadService fileUploadService;
     private final InstrumentBoxHistoryRepository historyRepository;
     private final InstrumentBoxHistoryService historyService;
-
 
     @Transactional
     public byte[] createInstrumentsAndGenerateZipSvgs(InstrumentRequest request) throws Exception {
@@ -72,7 +77,6 @@ public class InstrumentService {
     }
 
     private String generateBarcode() {
-        // генерируем случайную строку из 6 символов (буквы и цифры)
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         StringBuilder sb = new StringBuilder();
         Random random = new Random();
@@ -81,7 +85,6 @@ public class InstrumentService {
         }
         return sb.toString();
     }
-
 
     private String generateSerialNumber() {
         return "SN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -93,9 +96,9 @@ public class InstrumentService {
             for (Instrument instrument : instruments) {
                 String barcode = instrument.getBarcode();
 
-                int width = 600;       // ширина SVG
-                int height = 180;      // высота SVG
-                int margin = 10;       // отступы по краям
+                int width = 600;
+                int height = 180;
+                int margin = 10;
 
                 String svg = generateCode128Svg(barcode, width, height, margin);
 
@@ -107,7 +110,6 @@ public class InstrumentService {
         }
         return baos.toByteArray();
     }
-
 
     private String generateCode128Svg(String text, int width, int height, int margin) throws WriterException {
         Code128Writer writer = new Code128Writer();
@@ -164,20 +166,16 @@ public class InstrumentService {
         return sb.toString();
     }
 
-
-
     private boolean columnHasBlack(BitMatrix m, int x, int h) {
         for (int y = 0; y < h; y++) {
             if (m.get(x, y)) return true;
         }
         return false;
-
     }
 
     private String escapeXml(String s) {
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
-
 
     @Transactional
     public void returnInstruments(List<String> instrumentBarcodes) {
@@ -193,6 +191,63 @@ public class InstrumentService {
         }
     }
 
+    @Transactional
+    public byte[] returnInstrument(InstrumentReturnRequest request) throws Exception {
+        Instrument instrument = instrumentRepository.findByBarcode(request.getBarcode())
+                .orElseThrow(() -> new RuntimeException("Instrument not found"));
+
+        LocalDate now = LocalDate.now();
+        byte[] responseBytes = null;
+
+        ReturnMethod method = ReturnMethod.valueOf(request.getReturnMethod().toUpperCase());
+        BigDecimal paidAmount = null;
+
+        switch (method) {
+            case RETURNED:
+                instrument.setStatus(InstrumentStatus.ACTIVE);
+                historyService.logOperation(null, instrument, HistoryOperation.RETURNED);
+                break;
+            case PAID:
+                if (request.getSum() == null || request.getSum().compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new RuntimeException("Sum required for PAID");
+                }
+                instrument.setStatus(InstrumentStatus.UNACTIVE);
+                paidAmount = request.getSum();
+                historyService.logOperation(null, instrument, HistoryOperation.LOST);
+                break;
+            case REPLACED:
+                instrument.setStatus(InstrumentStatus.ACTIVE);
+                historyService.logOperation(null, instrument, HistoryOperation.RETURNED);
+                responseBytes = generateSingleSvg(instrument);
+                break;
+            default:
+                throw new RuntimeException("Invalid return method");
+        }
+
+        instrumentRepository.save(instrument);
+
+        InstrumentReturn returnEntry = instrumentReturnRepository.findByInstrumentId(instrument.getId());
+        if (returnEntry == null) {
+            returnEntry = new InstrumentReturn();
+            returnEntry.setInstrument(instrument);
+        }
+        returnEntry.setReturnMethod(method);
+        returnEntry.setPaidAmount(paidAmount);
+        returnEntry.setReturnDate(now);
+        instrumentReturnRepository.save(returnEntry);
+
+        return responseBytes;
+    }
+
+    private byte[] generateSingleSvg(Instrument instrument) throws Exception {
+        String barcode = instrument.getBarcode();
+        int width = 600;
+        int height = 180;
+        int margin = 10;
+        String svg = generateCode128Svg(barcode, width, height, margin);
+        return svg.getBytes(StandardCharsets.UTF_8);
+    }
+
     public Instrument getByBarcode(String barcode) {
         return instrumentRepository.findByBarcode(barcode).orElse(null);
     }
@@ -200,6 +255,7 @@ public class InstrumentService {
     public Page<Instrument> findAll(Pageable pageable) {
         return instrumentRepository.findAll(pageable);
     }
+
     public Page<Instrument> getInstrumentsByStatus(InstrumentStatus status, Pageable pageable) {
         return instrumentRepository.findAllByStatus(status, pageable);
     }

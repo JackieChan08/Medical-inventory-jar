@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -24,11 +25,11 @@ public class Instrument {
     private UUID id;
 
     @Column(unique = true, nullable = false)
-    private String barcode; // штрих-код Code39
+    private String barcode;
 
-    private String name; // имя инструмента
+    private String name;
 
-    private String serialNumber; // нужно самому создавать
+    private String serialNumber;
 
     private LocalDate productionDate; // дата изготовления
     private LocalDate acceptanceDate;
@@ -37,7 +38,7 @@ public class Instrument {
     private String country;
     private String composition;
 
-    private Boolean reusable;   // одноразовый / многоразовый
+    private Boolean reusable;
     private Integer usageCount; // сколько раз применялся
 
     @Enumerated(EnumType.STRING)

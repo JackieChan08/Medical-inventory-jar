@@ -36,9 +36,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -144,6 +143,45 @@ public class BoxService {
     }
 
     @Transactional
+    public void returnBox(ReturnRequest request) {
+        Box box = boxRepository.findByBarcode(request.getBoxBarcode())
+                .orElseThrow(() -> new RuntimeException("Box not found"));
+
+        Set<String> instrumentsInBox = box.getInstruments().stream()
+                .map(Instrument::getBarcode)
+                .collect(Collectors.toSet());
+
+        Set<String> returnedInstruments = new HashSet<>(request.getInstrumentBarcodes());
+
+        for (String instrumentBarcode : request.getInstrumentBarcodes()) {
+            instrumentRepository.findByBarcode(instrumentBarcode)
+                    .ifPresentOrElse(instrument -> {
+                        instrument.setStatus(InstrumentStatus.ACTIVE);
+                        instrumentRepository.save(instrument);
+                        instrumentBoxHistoryService.logOperation(box, instrument, HistoryOperation.RETURNED);
+                    }, () -> {
+                        instrumentBoxHistoryService.logOperation(box, null, HistoryOperation.LOST);
+                    });
+        }
+
+        Set<String> lostInstruments = new HashSet<>(instrumentsInBox);
+        lostInstruments.removeAll(returnedInstruments);
+
+        for (String lostInstrumentBarcode : lostInstruments) {
+            instrumentRepository.findByBarcode(lostInstrumentBarcode)
+                    .ifPresent(instrument -> {
+                        instrument.setStatus(InstrumentStatus.LOST);
+                        instrumentRepository.save(instrument);
+                        instrumentBoxHistoryService.logOperation(box, instrument, HistoryOperation.LOST);
+                    });
+        }
+
+        box.setStatus(BoxStatus.RETURNED);
+        boxRepository.save(box);
+        instrumentBoxHistoryService.logOperation(box, null, HistoryOperation.RETURNED);
+    }
+
+    @Transactional
     public Box updateBoxStatus(BoxStatusRequest boxStatusRequest) throws Exception {
         final Box box = boxRepository.findByBarcode(boxStatusRequest.getBarcode())
                 .orElseThrow(() -> new RuntimeException("Box not found"));
@@ -160,21 +198,16 @@ public class BoxService {
         boxRepository.save(box);
 
         if (boxStatusRequest.getInstrumentBarcodes() != null) {
-            for (String instrumentBarcode : boxStatusRequest.getInstrumentBarcodes()) {
-                instrumentRepository.findByBarcode(instrumentBarcode)
-                        .ifPresentOrElse(instrument -> {
-                            if (newStatus == BoxStatus.ISSUED) {
-                                instrument.setStatus(InstrumentStatus.IN_USE);
-                                instrumentRepository.save(instrument);
-                                instrumentBoxHistoryService.logOperation(
-                                        box,
-                                        instrument,
-                                        HistoryOperation.ISSUED,
-                                        box.getNurseName(),
-                                        box.getDepartment()
-                                );
+            if (newStatus == BoxStatus.RETURNED) {
+                Set<String> instrumentsInBox = box.getInstruments().stream()
+                        .map(Instrument::getBarcode)
+                        .collect(Collectors.toSet());
 
-                            } else if (newStatus == BoxStatus.RETURNED) {
+                Set<String> returnedInstruments = new HashSet<>(boxStatusRequest.getInstrumentBarcodes());
+
+                for (String instrumentBarcode : boxStatusRequest.getInstrumentBarcodes()) {
+                    instrumentRepository.findByBarcode(instrumentBarcode)
+                            .ifPresentOrElse(instrument -> {
                                 instrument.setStatus(InstrumentStatus.ACTIVE);
                                 instrumentRepository.save(instrument);
                                 instrumentBoxHistoryService.logOperation(
@@ -184,16 +217,59 @@ public class BoxService {
                                         box.getNurseName(),
                                         box.getDepartment()
                                 );
-                            }
-                        }, () -> {
-                            instrumentBoxHistoryService.logOperation(
-                                    box,
-                                    null,
-                                    HistoryOperation.LOST,
-                                    box.getNurseName(),
-                                    box.getDepartment()
-                            );
-                        });
+                            }, () -> {
+                                instrumentBoxHistoryService.logOperation(
+                                        box,
+                                        null,
+                                        HistoryOperation.LOST,
+                                        box.getNurseName(),
+                                        box.getDepartment()
+                                );
+                            });
+                }
+
+                Set<String> lostInstruments = new HashSet<>(instrumentsInBox);
+                lostInstruments.removeAll(returnedInstruments);
+
+                for (String lostInstrumentBarcode : lostInstruments) {
+                    instrumentRepository.findByBarcode(lostInstrumentBarcode)
+                            .ifPresent(instrument -> {
+                                instrument.setStatus(InstrumentStatus.LOST);
+                                instrumentRepository.save(instrument);
+                                instrumentBoxHistoryService.logOperation(
+                                        box,
+                                        instrument,
+                                        HistoryOperation.LOST,
+                                        box.getNurseName(),
+                                        box.getDepartment()
+                                );
+                            });
+                }
+            } else {
+                for (String instrumentBarcode : boxStatusRequest.getInstrumentBarcodes()) {
+                    instrumentRepository.findByBarcode(instrumentBarcode)
+                            .ifPresentOrElse(instrument -> {
+                                if (newStatus == BoxStatus.ISSUED) {
+                                    instrument.setStatus(InstrumentStatus.IN_USE);
+                                    instrumentRepository.save(instrument);
+                                    instrumentBoxHistoryService.logOperation(
+                                            box,
+                                            instrument,
+                                            HistoryOperation.ISSUED,
+                                            box.getNurseName(),
+                                            box.getDepartment()
+                                    );
+                                }
+                            }, () -> {
+                                instrumentBoxHistoryService.logOperation(
+                                        box,
+                                        null,
+                                        HistoryOperation.LOST,
+                                        box.getNurseName(),
+                                        box.getDepartment()
+                                );
+                            });
+                }
             }
         }
 
@@ -206,64 +282,6 @@ public class BoxService {
         }
 
         return box;
-    }
-
-
-
-
-    @Transactional
-    public Box addInstrumentToBox(String boxBarcode, String instrumentBarcode) {
-        Box box = boxRepository.findByBarcode(boxBarcode).orElseThrow(() -> new RuntimeException("Box not found"));
-        if (box == null) throw new RuntimeException("Box not found: " + boxBarcode);
-
-        Instrument instrument = instrumentRepository.findByBarcode(instrumentBarcode).orElseThrow(() -> new RuntimeException("Instrument not found"));
-        if (instrument == null) throw new RuntimeException("Instrument not found: " + instrumentBarcode);
-
-        instrument.setStatus(InstrumentStatus.IN_BOX);
-        instrumentRepository.save(instrument);
-
-        box.getInstruments().add(instrument);
-        Box savedBox = boxRepository.save(box);
-        instrumentBoxHistoryService.logOperation(savedBox, instrument, HistoryOperation.ISSUED);
-
-
-        return savedBox;
-    }
-
-    @Transactional
-    public Box updateBox(String boxBarcode, BoxRequest request, BoxStatus boxStatus) throws Exception {
-        Box box = boxRepository.findByBarcode(boxBarcode).orElseThrow(() -> new RuntimeException("Box not found"));
-        if (box == null) throw new RuntimeException("Box not found: " + boxBarcode);
-
-        if (boxStatus != null) box.setStatus(boxStatus);
-        box.setUpdatedAt(LocalDateTime.now());
-
-
-        return boxRepository.save(box);
-    }
-
-
-
-    @Transactional
-    public void returnBox(ReturnRequest request) {
-        Box box = boxRepository.findByBarcode(request.getBoxBarcode())
-                .orElseThrow(() -> new RuntimeException("Box not found"));
-
-        for (String instrumentBarcode : request.getInstrumentBarcodes()) {
-            instrumentRepository.findByBarcode(instrumentBarcode)
-                    .ifPresentOrElse(instrument -> {
-                        instrument.setStatus(InstrumentStatus.ACTIVE);
-                        instrumentRepository.save(instrument);
-                        instrumentBoxHistoryService.logOperation(box, instrument, HistoryOperation.RETURNED);
-                    }, () -> {
-                        // если инструмент не найден в системе
-                        instrumentBoxHistoryService.logOperation(box, null, HistoryOperation.LOST);
-                    });
-        }
-
-        box.setStatus(BoxStatus.RETURNED);
-        boxRepository.save(box);
-        instrumentBoxHistoryService.logOperation(box, null, HistoryOperation.RETURNED);
     }
 
     public Page<Box> getBoxesByStatus(BoxStatus status, Pageable pageable) {

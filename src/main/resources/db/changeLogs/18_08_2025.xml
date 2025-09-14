@@ -140,4 +140,23 @@
                                  referencedTableName="files" referencedColumnNames="id"/>
     </changeSet>
 
+    <changeSet id="7-create-instrument-returns" author="jeki">
+        <createTable tableName="instrument_returns">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="instrument_id" type="UUID">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="return_method" type="VARCHAR(50)"/>
+            <column name="paid_amount" type="DECIMAL(10,2)"/>
+            <column name="return_date" type="DATE"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="instrument_returns" baseColumnNames="instrument_id"
+                                 constraintName="fk_instrument_returns_instrument"
+                                 referencedTableName="instruments" referencedColumnNames="id"/>
+    </changeSet>
+
+
 </databaseChangeLog>

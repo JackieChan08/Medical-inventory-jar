@@ -5,6 +5,8 @@ import com.example.medicalinventory.DTO.InstrumentResponse;
 import com.example.medicalinventory.model.FileEntity;
 import com.example.medicalinventory.model.Instrument;
 import com.example.medicalinventory.model.InstrumentImage;
+import com.example.medicalinventory.model.InstrumentReturn;
+import com.example.medicalinventory.repository.InstrumentReturnRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,8 @@ public class InstrumentConverterService {
 
     @Value("${app.base-url}")
     private String baseUrl;
+
+    private final InstrumentReturnRepository instrumentReturnRepository;
 
     public InstrumentResponse convertToInstrumentResponse(Instrument instrument) {
         InstrumentResponse response = new InstrumentResponse();
@@ -34,13 +38,19 @@ public class InstrumentConverterService {
         response.setUsageCount(instrument.getUsageCount());
         response.setStatus(instrument.getStatus() != null ? instrument.getStatus().name() : null);
 
-        // обработка картинок
         if (instrument.getInstrumentImages() != null && !instrument.getInstrumentImages().isEmpty()) {
             List<FileResponse> images = instrument.getInstrumentImages().stream()
                     .map(InstrumentImage::getImage)
                     .map(this::mapToFileResponse)
                     .toList();
             response.setImages(images);
+        }
+
+        InstrumentReturn ret = instrumentReturnRepository.findByInstrumentId(instrument.getId());
+        if (ret != null) {
+            response.setPaidBy(ret.getPaidAmount());
+            response.setReturnBy(ret.getReturnMethod() != null ? ret.getReturnMethod().name() : null);
+            response.setReturnDate(ret.getReturnDate());
         }
 
         return response;
